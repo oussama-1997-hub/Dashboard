@@ -24,8 +24,8 @@ st.title("Dashboard d'analyse Lean 4.0 - Maturité organisationnelle et technolo
 st.sidebar.header("Filtres")
 
 # Filtre Taille entreprise (colonne "Taille entreprise ")
-taille_min = int(df["Taille entreprise "].min())
-taille_max = int(df["Taille entreprise "].max())
+taille_min = int(df["Taille entreprise"].min())
+taille_max = int(df["Taille entreprise"].max())
 taille_sel = st.sidebar.slider("Taille de l'entreprise (code)", taille_min, taille_max, (taille_min, taille_max))
 
 # Filtre maturité globale
