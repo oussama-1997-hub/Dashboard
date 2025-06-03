@@ -61,8 +61,8 @@ df, features = clean_data(df)
 st.sidebar.header("Filtres")
 
 # Dans la partie filtres
-taille_min = int(df["Taille entreprise"].min())
-taille_max = int(df["Taille entreprise"].max())
+taille_min = int(df["Taille entreprise "].min())
+taille_max = int(df["Taille entreprise "].max())
 taille_sel = st.sidebar.slider("Taille de l'entreprise", taille_min, taille_max, (taille_min, taille_max))
 
 
