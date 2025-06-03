@@ -1,9 +1,9 @@
 import streamlit as st
-st.set_page_config(page_title="Lean 4.0 Dashboard", layout="wide")
 import pandas as pd
 import plotly.express as px
 
-
+# ✅ MUST BE FIRST STREAMLIT COMMAND
+st.set_page_config(page_title="Lean 4.0 Dashboard", layout="wide")
 
 # Load data
 @st.cache_data
@@ -12,67 +12,54 @@ def load_data():
 
 df = load_data()
 
-# Title and layout
-st.set_page_config(page_title="Lean 4.0 Maturity Dashboard", layout="wide")
-st.title("📊 Lean 4.0 Maturity Assessment Dashboard")
-st.markdown("Gain insights into Lean & Digital transformation maturity across industries.")
+# Title and Description
+st.title("📊 Lean 4.0 & Digital Transformation Dashboard")
+st.markdown("""
+Explore company maturity across Lean 4.0 dimensions such as leadership, operations, technology, and learning organization.
+""")
 
-# Sidebar Filters
-with st.sidebar:
-    st.header("🔎 Filters")
-    sector = st.multiselect("Secteur industriel", df["Quelle est le secteur de votre entreprise ? "].unique())
-    size = st.multiselect("Taille entreprise ", df["Taille entreprise "].unique())
-
-    filtered_df = df.copy()
-    if sector:
-        filtered_df = filtered_df[filtered_df["Quelle est le secteur de votre entreprise ?"].isin(sector)]
-    if size:
-        filtered_df = filtered_df[filtered_df["Taille entreprise"].isin(size)]
-
-# Key Metrics
-col1, col2, col3 = st.columns(3)
-col1.metric("🎯 Moyenne Lean Score", f"{filtered_df['Lean Score'].mean():.2f}")
-col2.metric("🤖 Moyenne Tech Score", f"{filtered_df['Tech Score'].mean():.2f}")
-col3.metric("📈 Moyenne Combined Score", f"{filtered_df['Combined Score'].mean():.2f}")
+# KPIs
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("🔍 Total Rows", f"{df.shape[0]}")
+col2.metric("🏭 Unique Sectors", df["secteur industrie"].nunique())
+col3.metric("🌍 Countries", df["Pays"].nunique() if "Pays" in df else "N/A")
+col4.metric("📂 Columns", f"{df.shape[1]}")
 
 st.markdown("---")
 
-# Score Distribution
-col4, col5 = st.columns(2)
+# Sector Distribution
+st.subheader("📌 Industry Sector Distribution")
+fig1 = px.histogram(df, x="secteur industrie", color="secteur industrie", title="Distribution des secteurs industriels")
+fig1.update_layout(xaxis_title="Secteur", yaxis_title="Count", showlegend=False)
+st.plotly_chart(fig1, use_container_width=True)
 
-with col4:
-    fig = px.histogram(filtered_df, x="Lean Score", nbins=10, title="Distribution du Lean Score")
-    st.plotly_chart(fig, use_container_width=True)
+# Leadership Radar Chart
+st.subheader("👔 Leadership Indicators")
+leadership_cols = [
+    "Leadership - Engagement Lean ",
+    "Leadership - Engagement DT",
+    "Leadership - Stratégie ",
+    "Leadership - Communication"
+]
+if all(col in df.columns for col in leadership_cols):
+    mean_values = df[leadership_cols].mean()
+    radar_df = pd.DataFrame({
+        "Dimension": leadership_cols,
+        "Score": mean_values.values
+    })
 
-with col5:
-    fig = px.histogram(filtered_df, x="Tech Score", nbins=10, title="Distribution du Tech Score")
-    st.plotly_chart(fig, use_container_width=True)
+    fig2 = px.line_polar(radar_df, r='Score', theta='Dimension', line_close=True,
+                         title="Leadership Radar Chart", template="plotly_dark")
+    st.plotly_chart(fig2, use_container_width=True)
 
-# Maturity Levels
-st.markdown("### 🏆 Répartition des niveaux de maturité")
-col6, col7 = st.columns(2)
+# Heatmap of correlation
+st.subheader("🔥 Correlation Heatmap")
+corr_cols = df.select_dtypes(include=['float64', 'int64'])
+if not corr_cols.empty:
+    corr_matrix = corr_cols.corr()
+    fig3 = px.imshow(corr_matrix, text_auto=True, title="Correlation Matrix")
+    st.plotly_chart(fig3, use_container_width=True)
 
-with col6:
-    fig = px.pie(filtered_df, names="Maturity Level", title="Maturity Level")
-    st.plotly_chart(fig, use_container_width=True)
-
-with col7:
-    # Create a DataFrame with sector counts, using the default column names 'index' and 'count'
-    sector_counts_df = filtered_df["Quelle est le secteur de votre entreprise ? "].value_counts().reset_index()
-    fig = px.bar(sector_counts_df,
-                 x="Quelle est le secteur de votre entreprise ? ",  # Use the actual column name for sectors
-                 y="count",  # Use the default column name for counts
-                 title="Répartition par secteur",
-                 labels={"Quelle est le secteur de votre entreprise ? ": "Secteur", "count": "Nombre"}) # Map the actual and default column names to desired labels
-    st.plotly_chart(fig, use_container_width=True)
-
-# Scatterplot: Tech vs Lean Scores
-st.markdown("### 🔬 Corrélation entre Lean et Tech Scores")
-fig = px.scatter(filtered_df, x="Lean Score", y="Tech Score", color="Maturity Level",
-                 hover_data=["Nom de l'entreprise", "Poste occupé", "Taille entreprise "], # Corrected column name
-                 title="Lean Score vs Tech Score par entreprise")
-st.plotly_chart(fig, use_container_width=True)
-
-# Raw Data
-with st.expander("🧾 Voir les données brutes"):
-    st.dataframe(filtered_df)
+# Data table
+st.subheader("📋 Raw Data Preview")
+st.dataframe(df, use_container_width=True)
