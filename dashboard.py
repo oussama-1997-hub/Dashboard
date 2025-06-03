@@ -48,7 +48,7 @@ def clean_data(df):
     df["maturity_level_int"] = pd.to_numeric(df["maturity_level_int"], errors='coerce')
     df["Lean_level_int"] = pd.to_numeric(df["Lean_level_int"], errors='coerce')
     df["Digital_level_int"] = pd.to_numeric(df["Digital_level_int"], errors='coerce')
-    df["Taille_code"] = pd.to_numeric(df["Taille_code"], errors='coerce')
+    df["Taille entreprise"] = pd.to_numeric(df["Taille entreprise "], errors='coerce')
 
     df = df.dropna(subset=features + ["maturity_level_int", "Lean_level_int", "Digital_level_int", "Taille_code"])
 
@@ -60,9 +60,11 @@ df, features = clean_data(df)
 
 st.sidebar.header("Filtres")
 
-taille_min = int(df["Taille_code"].min())
-taille_max = int(df["Taille_code"].max())
-taille_sel = st.sidebar.slider("Taille de l'entreprise (code)", taille_min, taille_max, (taille_min, taille_max))
+# Dans la partie filtres
+taille_min = int(df["Taille entreprise"].min())
+taille_max = int(df["Taille entreprise"].max())
+taille_sel = st.sidebar.slider("Taille de l'entreprise", taille_min, taille_max, (taille_min, taille_max))
+
 
 maturity_min = int(df["maturity_level_int"].min())
 maturity_max = int(df["maturity_level_int"].max())
@@ -76,13 +78,13 @@ digital_min = int(df["Digital_level_int"].min())
 digital_max = int(df["Digital_level_int"].max())
 digital_sel = st.sidebar.slider("Maturité Digitale", digital_min, digital_max, (digital_min, digital_max))
 
+# Dans le filtre du dataframe
 df_filtered = df[
-    (df["Taille_code"] >= taille_sel[0]) & (df["Taille_code"] <= taille_sel[1]) &
+    (df["Taille entreprise"] >= taille_sel[0]) & (df["Taille entreprise"] <= taille_sel[1]) &
     (df["maturity_level_int"] >= maturity_sel[0]) & (df["maturity_level_int"] <= maturity_sel[1]) &
     (df["Lean_level_int"] >= lean_sel[0]) & (df["Lean_level_int"] <= lean_sel[1]) &
     (df["Digital_level_int"] >= digital_sel[0]) & (df["Digital_level_int"] <= digital_sel[1])
 ]
-
 st.markdown(f"### Données filtrées : {df_filtered.shape[0]} lignes")
 
 def plot_progress_bar(value, max_value, label):
