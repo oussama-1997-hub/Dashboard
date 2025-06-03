@@ -39,13 +39,19 @@ col3.metric("🔗 Score Combiné Moyen", round(filtered_df["Combined Score"].mea
 st.markdown("---")
 
 # Sector Distribution
+sector_counts = filtered_df["Quelle est le secteur de votre entreprise ? "].value_counts().reset_index()
+sector_counts.columns = ["Secteur", "Nombre"]
+
 fig_sector = px.bar(
-    filtered_df["Quelle est le secteur de votre entreprise ? "].value_counts().reset_index(),
-    x="index",
-    y="Quelle est le secteur de votre entreprise ? ",
-    title="🔧 Répartition des entreprises par secteur",
-    labels={"index": "Secteur", "Quelle est le secteur de votre entreprise ? ": "Nombre"}
+    sector_counts,
+    x="Secteur",
+    y="Nombre",
+    title="Répartition par secteur",
+    labels={"Secteur": "Secteur", "Nombre": "Nombre d'entreprises"},
+    color="Nombre",
+    color_continuous_scale="viridis"
 )
+
 st.plotly_chart(fig_sector, use_container_width=True)
 
 # Lean vs Tech Score Scatter
