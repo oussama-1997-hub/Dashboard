@@ -31,8 +31,8 @@ if uploaded_file is not None:
         "Systèmes cyber physiques": 0.136, "Simulation": 0.085, "Cloud computing": 0.110
     }
 
-    df['lean_score'] = df.iloc[:, df.columns.get_loc("Dans votre entreprise, quels sont les outils lean mis en place durant ces dernières années ?")].apply(lambda x: sum([lean_methods[m] for m in lean_methods if m in str(x)]))
-    df['i4_score'] = df.iloc[:, df.columns.get_loc("Dans votre entreprise, quelles sont les technologies mises en place durant ces dernières années ?")].apply(lambda x: sum([i4_tools[m] for m in i4_tools if m in str(x)]))
+    df['lean_score'] = df.iloc[:, df.columns.get_loc("Dans votre entreprise, quels sont les outils lean mis en place durant ces dernières années ? ")].apply(lambda x: sum([lean_methods[m] for m in lean_methods if m in str(x)]))
+    df['i4_score'] = df.iloc[:, df.columns.get_loc("Dans votre entreprise, quelles sont les technologies mises en place durant ces dernières années ? ")].apply(lambda x: sum([i4_tools[m] for m in i4_tools if m in str(x)]))
 
     # Mapping taille entreprise (si c'est du texte)
     if df["Taille entreprise "].dtype == 'object':
