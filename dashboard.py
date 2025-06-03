@@ -107,22 +107,7 @@ st.subheader("📏 Distribution des niveaux de maturité")
 fig_hist = px.histogram(filtered_df, x="maturity_level_int", nbins=10, color_discrete_sequence=["darkcyan"])
 st.plotly_chart(fig_hist, use_container_width=True)
 
-# =============================
-# 🧪 Clustering avec KMeans
-# =============================
-st.subheader("🧬 Clustering des entreprises (KMeans)")
-X_cluster = filtered_df[["Lean_level_int", "Digital_level_int"]]
-kmeans = KMeans(n_clusters=3, random_state=0).fit(X_cluster)
-filtered_df["cluster"] = kmeans.labels_
-fig_cluster = px.scatter(
-    filtered_df,
-    x="Lean_level_int",
-    y="Digital_level_int",
-    color="cluster",
-    symbol="Taille entreprise ",
-    title="Clustering des entreprises selon la maturité Lean et I4.0"
-)
-st.plotly_chart(fig_cluster, use_container_width=True)
+
 
 # =============================
 # 🌲 Arbre de décision
