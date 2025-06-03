@@ -110,15 +110,6 @@ st.plotly_chart(fig_hist, use_container_width=True)
 # =============================
 # 🧪 Clustering avec KMeans
 # =============================
-st.write("Colonnes pour clustering :")
-st.write(X_cluster.dtypes)
-
-st.write("Présence de valeurs manquantes :")
-st.write(X_cluster.isnull().sum())
-
-st.write("Aperçu des données :")
-st.write(X_cluster.head())
-
 # Sélection des colonnes pour le clustering
 X_cluster = df[[
     "Leadership - Engagement Lean ",
@@ -144,12 +135,29 @@ X_cluster = X_cluster.dropna()  # Supprimer les lignes avec NaN
 
 # Convertir toutes les colonnes en float (au cas où)
 X_cluster = X_cluster.astype(float)
+st.write("Colonnes pour clustering :")
+st.write(X_cluster.dtypes)
 
-# Clustering
-from sklearn.cluster import KMeans
+st.write("Présence de valeurs manquantes :")
+st.write(X_cluster.isnull().sum())
 
+st.write("Aperçu des données :")
+st.write(X_cluster.head())
+
+st.subheader("🧬 Clustering des entreprises (KMeans)")
+X_cluster = filtered_df[["Lean_level_int", "Digital_level_int"]]
 kmeans = KMeans(n_clusters=3, random_state=0).fit(X_cluster)
-df.loc[X_cluster.index, "Cluster"] = kmeans.labels_
+filtered_df["cluster"] = kmeans.labels_
+fig_cluster = px.scatter(
+    filtered_df,
+    x="Lean_level_int",
+    y="Digital_level_int",
+    color="cluster",
+    symbol="Taille entreprise ",
+    title="Clustering des entreprises selon la maturité Lean et I4.0"
+)
+st.plotly_chart(fig_cluster, use_container_width=True)
+
 
 # =============================
 # 🌲 Arbre de décision
