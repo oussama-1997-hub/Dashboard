@@ -20,7 +20,7 @@ st.title("📊 Lean 4.0 Maturity Assessment Dashboard")
 # Sidebar filters
 st.sidebar.header("🔎 Filters")
 sectors = st.sidebar.multiselect("Secteur", df["Quelle est le secteur de votre entreprise ? "].unique(), default=df["Quelle est le secteur de votre entreprise ? "].unique())
-sizes = st.sidebar.multiselect("Taille d’entreprise", df["Taille entreprise"].unique(), default=df["Taille entreprise"].unique())
+sizes = st.sidebar.multiselect("Taille d’entreprise", df["Taille entreprise "].unique(), default=df["Taille entreprise "].unique())
 maturity_levels = st.sidebar.multiselect("Niveau de maturité", df["Maturity Level"].unique(), default=df["Maturity Level"].unique())
 
 # Filtered data
