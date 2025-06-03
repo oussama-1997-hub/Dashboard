@@ -17,35 +17,29 @@ df = load_data()
 # Titre principal
 st.title("📊 Lean 4.0 Maturity Assessment Dashboard")
 
-# --- Sidebar Filtres compactes ---
+# --- Sidebar Filtres empilés ---
 st.sidebar.header("🔎 Filtres")
 
-# Organiser les filtres en colonnes pour gagner de la place
-col1, col2, col3 = st.sidebar.columns([1,1,1])
+sectors = st.sidebar.multiselect(
+    label="Secteur",
+    options=sorted(df["Quelle est le secteur de votre entreprise ? "].dropna().unique()),
+    default=sorted(df["Quelle est le secteur de votre entreprise ? "].dropna().unique()),
+    help="Filtrer par secteur"
+)
 
-with col1:
-    sectors = st.multiselect(
-        label="Secteur",
-        options=sorted(df["Quelle est le secteur de votre entreprise ? "].dropna().unique()),
-        default=sorted(df["Quelle est le secteur de votre entreprise ? "].dropna().unique()),
-        help="Filtrer par secteur"
-    )
+sizes = st.sidebar.multiselect(
+    label="Taille",
+    options=sorted(df["Taille entreprise "].dropna().unique()),
+    default=sorted(df["Taille entreprise "].dropna().unique()),
+    help="Filtrer par taille d'entreprise"
+)
 
-with col2:
-    sizes = st.multiselect(
-        label="Taille",
-        options=sorted(df["Taille entreprise "].dropna().unique()),
-        default=sorted(df["Taille entreprise "].dropna().unique()),
-        help="Filtrer par taille d'entreprise"
-    )
-
-with col3:
-    maturity_levels = st.multiselect(
-        label="Maturité",
-        options=sorted(df["Maturity Level"].dropna().unique()),
-        default=sorted(df["Maturity Level"].dropna().unique()),
-        help="Filtrer par niveau de maturité"
-    )
+maturity_levels = st.sidebar.multiselect(
+    label="Maturité",
+    options=sorted(df["Maturity Level"].dropna().unique()),
+    default=sorted(df["Maturity Level"].dropna().unique()),
+    help="Filtrer par niveau de maturité"
+)
 
 if st.sidebar.button("🔄 Réinitialiser les filtres"):
     st.experimental_rerun()
@@ -131,4 +125,3 @@ st.plotly_chart(fig_maturity, use_container_width=True)
 # --- Affichage des données brutes ---
 with st.expander("📄 Afficher les données brutes filtrées"):
     st.dataframe(filtered_df.reset_index(drop=True))
-
