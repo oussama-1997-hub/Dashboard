@@ -23,10 +23,17 @@ st.title("Dashboard d'analyse Lean 4.0 - Maturité organisationnelle et technolo
 # --- Sidebar : filtres ---
 st.sidebar.header("Filtres")
 
-# Filtre Taille entreprise (colonne "Taille entreprise ")
-taille_min = int(df["Taille entreprise"].min())
-taille_max = int(df["Taille entreprise"].max())
-taille_sel = st.sidebar.slider("Taille de l'entreprise (code)", taille_min, taille_max, (taille_min, taille_max))
+# Filtre Taille entreprise (catégories string)
+taille_categories = df["Taille entreprise "].unique().tolist()
+taille_sel = st.sidebar.multiselect(
+    "Taille de l'entreprise",
+    options=taille_categories,
+    default=taille_categories  # par défaut, tout sélectionné
+)
+
+# Si aucune taille sélectionnée, on prend tout
+if len(taille_sel) == 0:
+    taille_sel = taille_categories
 
 # Filtre maturité globale
 maturity_min = int(df["maturity_level_int"].min())
@@ -45,7 +52,7 @@ digital_sel = st.sidebar.slider("Maturité Digitale", digital_min, digital_max, 
 
 # Appliquer filtres
 df_filtered = df[
-    (df["Taille entreprise "] >= taille_sel[0]) & (df["Taille entreprise "] <= taille_sel[1]) &
+    (df["Taille entreprise "].isin(taille_sel)) &
     (df["maturity_level_int"] >= maturity_sel[0]) & (df["maturity_level_int"] <= maturity_sel[1]) &
     (df["Lean_level_int"] >= lean_sel[0]) & (df["Lean_level_int"] <= lean_sel[1]) &
     (df["Digital_level_int"] >= digital_sel[0]) & (df["Digital_level_int"] <= digital_sel[1])
@@ -80,7 +87,6 @@ st.pyplot(fig2)
 
 st.header("Clustering KMeans sur les maturités")
 
-# Sélection features pour clustering
 cluster_features = df_filtered[["maturity_level_int", "Lean_level_int", "Digital_level_int"]].dropna()
 
 if cluster_features.shape[0] > 0:
@@ -111,7 +117,6 @@ else:
 
 st.header("Prédiction du niveau de maturité digitale")
 
-# Préparation des données
 features = [
     "Leadership - Engagement Lean ",
     "Leadership - Engagement DT",
@@ -135,7 +140,6 @@ df_ml = df_filtered.dropna(subset=features + ["Digital_level_int"])
 X = df_ml[features]
 y = df_ml["Digital_level_int"]
 
-# Split train-test
 X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
 
 clf = DecisionTreeClassifier(random_state=42)
@@ -146,7 +150,6 @@ st.subheader("Performance du modèle")
 st.write("Accuracy:", accuracy_score(y_test, y_pred))
 st.text(classification_report(y_test, y_pred))
 
-# Affichage arbre de décision
 fig4, ax4 = plt.subplots(figsize=(20,10))
 plot_tree(clf, feature_names=features, class_names=[str(i) for i in sorted(y.unique())], filled=True, ax=ax4)
 st.pyplot(fig4)
