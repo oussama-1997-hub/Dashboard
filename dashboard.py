@@ -2,86 +2,97 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-# ✅ MUST BE FIRST STREAMLIT COMMAND
-st.set_page_config(page_title="Lean 4.0 Dashboard", layout="wide")
+# ✅ Set page config at the top (MUST BE FIRST Streamlit command)
+st.set_page_config(page_title="Lean 4.0 Maturity Dashboard", layout="wide")
 
-# Load data
+# 📥 Load data
 @st.cache_data
 def load_data():
-    return pd.read_excel("processed_data.xlsx")
+    df = pd.read_excel("processed_data.xlsx")
+    return df
 
 df = load_data()
 
-# Title and Description
-st.title("📊 Lean 4.0 Maturity Assessment Dashboard")
-st.markdown("Gain insights into Lean & Digital transformation maturity across industries.")
+# ✅ Sidebar filters
+st.sidebar.title("🔍 Filtres")
+secteurs = df["Quelle est le secteur de votre entreprise ? "].dropna().unique()
+secteur_selectionne = st.sidebar.multiselect("Secteurs d'activité :", secteurs, default=secteurs)
 
-# Sidebar Filters
-with st.sidebar:
-    st.header("🔎 Filters")
-    sector = st.multiselect("Secteur industriel", df["Quelle est le secteur de votre entreprise ? "].unique())
-    size = st.multiselect("Taille entreprise ", df["Taille entreprise "].unique())
+# ✅ Filtered dataframe
+filtered_df = df[df["Quelle est le secteur de votre entreprise ? "].isin(secteur_selectionne)]
 
-    filtered_df = df.copy()
-    if sector:
-        filtered_df = filtered_df[filtered_df["Quelle est le secteur de votre entreprise ? "].isin(sector)]
-    if size:
-        filtered_df = filtered_df[filtered_df["Taille entreprise "].isin(size)]
+# ✅ Main Title
+st.title("📊 Tableau de Bord de Maturité Lean 4.0")
 
-# Key Metrics
+# ✅ Clean sector names (basic normalization)
+filtered_df["secteur_clean"] = (
+    filtered_df["Quelle est le secteur de votre entreprise ? "]
+    .str.strip()
+    .str.lower()
+    .str.replace("industrie ", "")
+    .str.replace("industries ", "")
+    .str.replace("aéronautique", "aéronautique")
+    .str.replace("automobile", "automobile")
+)
+
+# ✅ KPI cards
 col1, col2, col3 = st.columns(3)
-col1.metric("🎯 Moyenne Lean Score", f"{filtered_df['Lean Score'].mean():.2f}")
-col2.metric("🤖 Moyenne Tech Score", f"{filtered_df['Tech Score'].mean():.2f}")
-col3.metric("📈 Moyenne Combined Score", f"{filtered_df['Combined Score'].mean():.2f}")
+col1.metric("Nombre de réponses", len(filtered_df))
+col2.metric("Secteurs uniques", filtered_df["secteur_clean"].nunique())
+col3.metric("Taux de complétion", f"{filtered_df.notnull().mean().mean()*100:.1f}%")
 
-st.markdown("---")
+# ✅ Bar chart: Répartition par secteur
+st.subheader("📌 Répartition des Réponses par Secteur")
+secteur_count = filtered_df["secteur_clean"].value_counts().reset_index()
+secteur_count.columns = ["Secteur", "Nombre"]
 
-# Score Distribution
-col4, col5 = st.columns(2)
+fig = px.bar(
+    secteur_count,
+    x="Secteur",
+    y="Nombre",
+    title="Répartition par secteur",
+    labels={"Nombre": "Nombre de réponses"},
+    color="Secteur"
+)
+st.plotly_chart(fig, use_container_width=True, key="bar_chart_secteurs")
 
-with col4:
-    fig = px.histogram(filtered_df, x="Lean Score", nbins=10, title="Distribution du Lean Score")
-    st.plotly_chart(fig, use_container_width=True)
+# ✅ Radar Chart: Moyenne des dimensions
+dimensions = [
+    "Leadership - Engagement Lean ",
+    "Leadership - Engagement DT",
+    "Leadership - Stratégie ",
+    "Leadership - Communication",
+    "Supply Chain - Collaboration inter-organisationnelle",
+    "Supply Chain - Traçabilité",
+    "Supply Chain - Impact sur les employées",
+    "Opérations - Standardisation des processus",
+    "Opérations - Juste-à-temps (JAT)",
+    "Opérations - Gestion des résistances",
+    "Technologies - Connectivité et gestion des données",
+    "Technologies - Automatisation",
+    "Technologies - Pilotage du changement",
+    "Organisation apprenante  - Formation et développement des compétences",
+    "Organisation apprenante  - Collaboration et Partage des Connaissances",
+    "Organisation apprenante  - Flexibilité organisationnelle"
+]
 
-with col5:
-    fig = px.histogram(filtered_df, x="Tech Score", nbins=10, title="Distribution du Tech Score")
-    st.plotly_chart(fig, use_container_width=True)
+# Remove empty or non-float columns
+valid_dimensions = [col for col in dimensions if col in filtered_df.columns and pd.api.types.is_numeric_dtype(filtered_df[col])]
 
-# Maturity Levels
-st.markdown("### 🏆 Répartition des niveaux de maturité")
-col6, col7 = st.columns(2)
+radar_data = pd.DataFrame({
+    "Dimension": valid_dimensions,
+    "Score Moyen": [filtered_df[col].mean() for col in valid_dimensions]
+})
 
-with col6:
-    fig = px.pie(filtered_df, names="Maturity Level", title="Maturity Level")
-    st.plotly_chart(fig, use_container_width=True)
+fig_radar = px.line_polar(radar_data, r='Score Moyen', theta='Dimension', line_close=True,
+                          title="Maturité Moyenne par Dimension", markers=True)
+fig_radar.update_traces(fill='toself')
+st.plotly_chart(fig_radar, use_container_width=True, key="radar_chart_maturite")
 
-with col7:
-        # Cleaned sector column name
-    secteur_col = "Quelle est le secteur de votre entreprise ? "
-    
-    # Count values and rename columns for clarity
-    sector_counts = filtered_df[secteur_col].value_counts().reset_index()
-    sector_counts.columns = ["Secteur", "Nombre"]
-    
-    # Bar chart
-    fig = px.bar(
-        sector_counts,
-        x="Secteur",
-        y="Nombre",
-        title="Répartition par secteur",
-        labels={"Secteur": "Secteur", "Nombre": "Nombre d'entreprises"}
-    )
-    st.plotly_chart(fig, use_container_width=True)
-
-    st.plotly_chart(fig, use_container_width=True)
-
-# Scatterplot: Tech vs Lean Scores
-st.markdown("### 🔬 Corrélation entre Lean et Tech Scores")
-fig = px.scatter(filtered_df, x="Lean Score", y="Tech Score", color="Maturity Level",
-                 hover_data=["Nom de l'entreprise", "Poste occupé", "Taille entreprise "],
-                 title="Lean Score vs Tech Score par entreprise")
-st.plotly_chart(fig, use_container_width=True)
-
-# Raw Data
-with st.expander("🧾 Voir les données brutes"):
+# ✅ Show filtered data
+with st.expander("📄 Voir les données filtrées"):
     st.dataframe(filtered_df)
+
+# ✅ Footer
+st.markdown("---")
+st.markdown("Réalisé avec ❤️ par Oussama Ben Ali")
