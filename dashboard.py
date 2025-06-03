@@ -7,7 +7,6 @@ Original file is located at
     https://colab.research.google.com/drive/1uUoC-aQmCyKrsdBX4OGaH2g-Sbx1XEM9
 """
 
-pip install streamlit
 
 streamlit run dashboard.py
 
