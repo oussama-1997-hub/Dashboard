@@ -4,11 +4,16 @@ import plotly.express as px
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-# Load data
-df = pd.read_excel("processed_data.xlsx")
-
 # Streamlit config must be first
 st.set_page_config(page_title="Lean 4.0 Maturity Dashboard", layout="wide")
+
+# 📥 Load data
+@st.cache_data
+def load_data():
+    df = pd.read_excel("processed_data.xlsx")
+    return df
+
+df = load_data()
 
 st.title("📊 Lean 4.0 Maturity Assessment Dashboard")
 
