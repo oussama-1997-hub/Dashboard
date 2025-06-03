@@ -50,7 +50,7 @@ def clean_data(df):
     df["Digital_level_int"] = pd.to_numeric(df["Digital_level_int"], errors='coerce')
     df["Taille entreprise"] = pd.to_numeric(df["Taille entreprise "], errors='coerce')
 
-    df = df.dropna(subset=features + ["maturity_level_int", "Lean_level_int", "Digital_level_int", "Taille_code"])
+    df = df.dropna(subset=features + ["maturity_level_int", "Lean_level_int", "Digital_level_int", "Taille entreprise "])
 
     return df, features
 
