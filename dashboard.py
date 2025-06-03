@@ -87,7 +87,6 @@ st.pyplot(fig2)
 
 st.header("Clustering KMeans sur les maturités")
 
-cluster_features = df_filtered[["maturity_level_int", "Lean_level_int", "Digital_level_int"]].dropna()
 
 if cluster_features.shape[0] > 0:
     kmeans = KMeans(n_clusters=3, random_state=42)
