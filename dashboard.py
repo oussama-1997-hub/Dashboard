@@ -1,8 +1,9 @@
 import streamlit as st
+st.set_page_config(page_title="Lean 4.0 Dashboard", layout="wide")
 import pandas as pd
 import plotly.express as px
 
-st.set_page_config(page_title="Lean 4.0 Dashboard", layout="wide")
+
 
 # Load data
 @st.cache_data
