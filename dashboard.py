@@ -8,21 +8,22 @@ from sklearn.cluster import KMeans
 from sklearn.tree import DecisionTreeClassifier, plot_tree
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, accuracy_score
+from sklearn.decomposition import PCA
 
 st.set_page_config(page_title="Dashboard Lean 4.0 Maturité", layout="wide")
 
-# Charger les données
-@st.cache_data
+# --- Chargement des données ---
 
+@st.cache_data
 def load_data():
-    df = pd.read_excel("processed_data.xlsx")
+    df = pd.read_excel("processed_data.xlsx")  # Assure-toi que le fichier est dans le même dossier que ton script
     return df
 
 df = load_data()
 
-# --- Nettoyage des données ---
+# --- Nettoyage et préparation des données ---
+
 def clean_data(df):
-    # Colonnes sous-dimensions Lean 4.0
     features = [
         "Leadership - Engagement Lean ",
         "Leadership - Engagement DT",
@@ -41,126 +42,147 @@ def clean_data(df):
         "Organisation apprenante  - Collaboration et Partage des Connaissances",
         "Organisation apprenante  - Flexibilité organisationnelle"
     ]
-    # Convertir en float
     for col in features:
         df[col] = pd.to_numeric(df[col], errors='coerce')
 
-    # Colonnes maturité et taille
     df["maturity_level_int"] = pd.to_numeric(df["maturity_level_int"], errors='coerce')
     df["Lean_level_int"] = pd.to_numeric(df["Lean_level_int"], errors='coerce')
     df["Digital_level_int"] = pd.to_numeric(df["Digital_level_int"], errors='coerce')
-
-    # Exemple taille entreprise codée (assurez-vous que cette colonne existe dans votre fichier)
     df["Taille_code"] = pd.to_numeric(df["Taille_code"], errors='coerce')
 
-    # Supprimer lignes avec NaN dans les colonnes essentielles
     df = df.dropna(subset=features + ["maturity_level_int", "Lean_level_int", "Digital_level_int", "Taille_code"])
 
     return df, features
 
+df, features = clean_data(df)
+
 # --- Interface utilisateur ---
-st.title("Dashboard Lean 4.0 - Analyse de maturité")
 
-# Charger dataset
-uploaded_file = st.file_uploader("Charger le fichier CSV des données", type=["csv"])
-if uploaded_file is not None:
-    df = load_data(uploaded_file)
-    df, features = clean_data(df)
+st.sidebar.header("Filtres")
 
-    # Filtres
-    st.sidebar.header("Filtres")
+taille_min = int(df["Taille_code"].min())
+taille_max = int(df["Taille_code"].max())
+taille_sel = st.sidebar.slider("Taille de l'entreprise (code)", taille_min, taille_max, (taille_min, taille_max))
 
-    taille_min = int(df["Taille_code"].min())
-    taille_max = int(df["Taille_code"].max())
-    taille_sel = st.sidebar.slider("Taille de l'entreprise (code)", taille_min, taille_max, (taille_min, taille_max))
+maturity_min = int(df["maturity_level_int"].min())
+maturity_max = int(df["maturity_level_int"].max())
+maturity_sel = st.sidebar.slider("Maturité globale", maturity_min, maturity_max, (maturity_min, maturity_max))
 
-    maturity_min = int(df["maturity_level_int"].min())
-    maturity_max = int(df["maturity_level_int"].max())
-    maturity_sel = st.sidebar.slider("Maturité globale", maturity_min, maturity_max, (maturity_min, maturity_max))
+lean_min = int(df["Lean_level_int"].min())
+lean_max = int(df["Lean_level_int"].max())
+lean_sel = st.sidebar.slider("Maturité Lean", lean_min, lean_max, (lean_min, lean_max))
 
-    lean_min = int(df["Lean_level_int"].min())
-    lean_max = int(df["Lean_level_int"].max())
-    lean_sel = st.sidebar.slider("Maturité Lean", lean_min, lean_max, (lean_min, lean_max))
+digital_min = int(df["Digital_level_int"].min())
+digital_max = int(df["Digital_level_int"].max())
+digital_sel = st.sidebar.slider("Maturité Digitale", digital_min, digital_max, (digital_min, digital_max))
 
-    digital_min = int(df["Digital_level_int"].min())
-    digital_max = int(df["Digital_level_int"].max())
-    digital_sel = st.sidebar.slider("Maturité Digitale", digital_min, digital_max, (digital_min, digital_max))
+df_filtered = df[
+    (df["Taille_code"] >= taille_sel[0]) & (df["Taille_code"] <= taille_sel[1]) &
+    (df["maturity_level_int"] >= maturity_sel[0]) & (df["maturity_level_int"] <= maturity_sel[1]) &
+    (df["Lean_level_int"] >= lean_sel[0]) & (df["Lean_level_int"] <= lean_sel[1]) &
+    (df["Digital_level_int"] >= digital_sel[0]) & (df["Digital_level_int"] <= digital_sel[1])
+]
 
-    # Appliquer filtres
-    df_filtered = df[
-        (df["Taille_code"] >= taille_sel[0]) & (df["Taille_code"] <= taille_sel[1]) &
-        (df["maturity_level_int"] >= maturity_sel[0]) & (df["maturity_level_int"] <= maturity_sel[1]) &
-        (df["Lean_level_int"] >= lean_sel[0]) & (df["Lean_level_int"] <= lean_sel[1]) &
-        (df["Digital_level_int"] >= digital_sel[0]) & (df["Digital_level_int"] <= digital_sel[1])
-    ]
+st.markdown(f"### Données filtrées : {df_filtered.shape[0]} lignes")
 
-    st.markdown(f"### Données filtrées : {df_filtered.shape[0]} lignes")
+def plot_progress_bar(value, max_value, label):
+    pct = int((value / max_value) * 100)
+    st.progress(pct)
+    st.write(f"{label}: {value:.2f} / {max_value}")
 
-    # --- Analyse exploratoire (EDA) ---
-    st.subheader("Analyse exploratoire")
+st.subheader("Maturité moyenne des entreprises filtrées")
+avg_maturity = df_filtered["maturity_level_int"].mean()
+avg_lean = df_filtered["Lean_level_int"].mean()
+avg_digital = df_filtered["Digital_level_int"].mean()
 
-    col1, col2 = st.columns(2)
+max_maturity = max(df["maturity_level_int"])
+max_lean = max(df["Lean_level_int"])
+max_digital = max(df["Digital_level_int"])
 
-    with col1:
-        st.write("Statistiques descriptives des maturités")
-        st.write(df_filtered[["maturity_level_int", "Lean_level_int", "Digital_level_int"]].describe())
+plot_progress_bar(avg_maturity, max_maturity, "Maturité globale moyenne")
+plot_progress_bar(avg_lean, max_lean, "Maturité Lean moyenne")
+plot_progress_bar(avg_digital, max_digital, "Maturité Digitale moyenne")
 
-    with col2:
-        st.write("Histogrammes des niveaux de maturité")
-        fig, ax = plt.subplots(figsize=(8,4))
-        sns.histplot(df_filtered["maturity_level_int"], kde=True, color="blue", label="Globale", ax=ax)
-        sns.histplot(df_filtered["Lean_level_int"], kde=True, color="green", label="Lean", ax=ax)
-        sns.histplot(df_filtered["Digital_level_int"], kde=True, color="red", label="Digitale", ax=ax)
-        plt.legend()
-        st.pyplot(fig)
+# Analyse exploratoire simple
 
-    # --- Clustering KMeans ---
-    st.subheader("Clustering des sous-dimensions organisationnelles (KMeans)")
+st.subheader("Distribution des maturités")
 
-    X_cluster = df_filtered[features].copy()
-    X_cluster = X_cluster.astype(float)  # assure conversion
+fig, ax = plt.subplots(1, 3, figsize=(18, 5))
+sns.histplot(df_filtered["maturity_level_int"], bins=10, ax=ax[0], color="skyblue")
+ax[0].set_title("Maturité globale")
 
-    # Appliquer KMeans
-    kmeans = KMeans(n_clusters=3, random_state=42)
-    clusters = kmeans.fit_predict(X_cluster)
+sns.histplot(df_filtered["Lean_level_int"], bins=10, ax=ax[1], color="lightgreen")
+ax[1].set_title("Maturité Lean")
 
-    df_filtered["Cluster"] = clusters
+sns.histplot(df_filtered["Digital_level_int"], bins=10, ax=ax[2], color="salmon")
+ax[2].set_title("Maturité Digitale")
 
-    st.write("Répartition des clusters")
-    fig2, ax2 = plt.subplots()
-    sns.countplot(x="Cluster", data=df_filtered, ax=ax2)
-    st.pyplot(fig2)
+st.pyplot(fig)
 
-    # Visualisation clusters vs maturité globale
-    st.write("Maturité globale par cluster")
-    fig3, ax3 = plt.subplots()
-    sns.boxplot(x="Cluster", y="maturity_level_int", data=df_filtered, ax=ax3)
-    st.pyplot(fig3)
+st.subheader("Carte de corrélation")
 
-    # --- Modèle ML : Prédiction de la maturité digitale ---
-    st.subheader("Modèle ML: Prédiction de la maturité digitale (Digital_level_int)")
+corr_df = df_filtered[features + ["maturity_level_int", "Lean_level_int", "Digital_level_int"]].corr()
+fig_corr, ax_corr = plt.subplots(figsize=(14, 10))
+sns.heatmap(corr_df, annot=True, cmap="coolwarm", ax=ax_corr, fmt=".2f")
+st.pyplot(fig_corr)
 
-    X = df_filtered[features + ["Lean_level_int"]]
-    y = df_filtered["Digital_level_int"]
+# Clustering KMeans
 
-    # Split train/test
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.3, random_state=42)
+st.subheader("Clustering KMeans sur sous-dimensions")
 
-    clf = DecisionTreeClassifier(max_depth=4, random_state=42)
-    clf.fit(X_train, y_train)
+X_cluster = df_filtered[features].copy()
 
-    y_pred = clf.predict(X_test)
-    acc = accuracy_score(y_test, y_pred)
-    st.write(f"Accuracy sur test set : {acc:.2f}")
+X_norm = (X_cluster - X_cluster.min()) / (X_cluster.max() - X_cluster.min())
 
-    st.text("Rapport classification :")
-    st.text(classification_report(y_test, y_pred))
+n_clusters = st.slider("Nombre de clusters KMeans", 2, 10, 3)
 
-    # Visualisation de l'arbre
-    fig4, ax4 = plt.subplots(figsize=(15,8))
-    plot_tree(clf, feature_names=X.columns, class_names=[str(x) for x in sorted(y.unique())], filled=True, ax=ax4)
-    st.pyplot(fig4)
+kmeans = KMeans(n_clusters=n_clusters, random_state=42)
+clusters = kmeans.fit_predict(X_norm)
 
-else:
-    st.info("Merci de charger un fichier CSV pour commencer.")
+df_filtered["Cluster"] = clusters
 
+st.write("Répartition des clusters:")
+st.bar_chart(df_filtered["Cluster"].value_counts().sort_index())
+
+st.write("Maturité moyenne par cluster:")
+st.write(df_filtered.groupby("Cluster")[["maturity_level_int", "Lean_level_int", "Digital_level_int"]].mean())
+
+pca = PCA(n_components=2)
+pca_result = pca.fit_transform(X_norm)
+df_filtered["pca1"] = pca_result[:, 0]
+df_filtered["pca2"] = pca_result[:, 1]
+
+fig_pca, ax_pca = plt.subplots()
+sns.scatterplot(data=df_filtered, x="pca1", y="pca2", hue="Cluster", palette="Set2", ax=ax_pca)
+ax_pca.set_title("Clusters visualisés en 2D avec PCA")
+st.pyplot(fig_pca)
+
+# Modèle Decision Tree
+
+st.subheader("Modèle de prédiction de la maturité digitale (Digital_level_int)")
+
+df_filtered["Digital_level_cat"] = pd.cut(df_filtered["Digital_level_int"], bins=3, labels=["Bas", "Moyen", "Haut"])
+
+X = df_filtered[features + ["maturity_level_int", "Lean_level_int"]]
+y = df_filtered["Digital_level_cat"]
+
+y_num = y.cat.codes
+
+X_train, X_test, y_train, y_test = train_test_split(X, y_num, test_size=0.3, random_state=42)
+
+dtc = DecisionTreeClassifier(max_depth=4, random_state=42)
+dtc.fit(X_train, y_train)
+
+y_pred = dtc.predict(X_test)
+acc = accuracy_score(y_test, y_pred)
+st.write(f"Accuracy du modèle Decision Tree : **{acc:.2f}**")
+
+st.text("Classification report :")
+st.text(classification_report(y_test, y_pred, target_names=["Bas", "Moyen", "Haut"]))
+
+fig_tree, ax_tree = plt.subplots(figsize=(20, 10))
+plot_tree(dtc, feature_names=X.columns, class_names=["Bas", "Moyen", "Haut"], filled=True, ax=ax_tree, rounded=True)
+st.pyplot(fig_tree)
+
+st.markdown("---")
+st.markdown("© 2025 - Dashboard Lean 4.0 Maturité")
