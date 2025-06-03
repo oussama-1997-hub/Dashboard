@@ -107,7 +107,49 @@ st.subheader("📏 Distribution des niveaux de maturité")
 fig_hist = px.histogram(filtered_df, x="maturity_level_int", nbins=10, color_discrete_sequence=["darkcyan"])
 st.plotly_chart(fig_hist, use_container_width=True)
 
+# =============================
+# 🧪 Clustering avec KMeans
+# =============================
+st.write("Colonnes pour clustering :")
+st.write(X_cluster.dtypes)
 
+st.write("Présence de valeurs manquantes :")
+st.write(X_cluster.isnull().sum())
+
+st.write("Aperçu des données :")
+st.write(X_cluster.head())
+
+# Sélection des colonnes pour le clustering
+X_cluster = df[[
+    "Leadership - Engagement Lean ",
+    "Leadership - Engagement DT",
+    "Leadership - Stratégie ",
+    "Leadership - Communication",
+    "Supply Chain - Collaboration inter-organisationnelle",
+    "Supply Chain - Traçabilité",
+    "Supply Chain - Impact sur les employées",
+    "Opérations - Standardisation des processus",
+    "Opérations - Juste-à-temps (JAT)",
+    "Opérations - Gestion des résistances",
+    "Technologies - Connectivité et gestion des données",
+    "Technologies - Automatisation",
+    "Technologies - Pilotage du changement",
+    "Organisation apprenante  - Formation et développement des compétences",
+    "Organisation apprenante  - Collaboration et Partage des Connaissances",
+    "Organisation apprenante  - Flexibilité organisationnelle"
+]]
+
+# Nettoyage des données pour KMeans
+X_cluster = X_cluster.dropna()  # Supprimer les lignes avec NaN
+
+# Convertir toutes les colonnes en float (au cas où)
+X_cluster = X_cluster.astype(float)
+
+# Clustering
+from sklearn.cluster import KMeans
+
+kmeans = KMeans(n_clusters=3, random_state=0).fit(X_cluster)
+df.loc[X_cluster.index, "Cluster"] = kmeans.labels_
 
 # =============================
 # 🌲 Arbre de décision
