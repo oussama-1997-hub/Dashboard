@@ -26,7 +26,7 @@ maturity_levels = st.sidebar.multiselect("Niveau de maturité", df["Maturity Lev
 # Filtered data
 filtered_df = df[
     (df["Quelle est le secteur de votre entreprise ? "].isin(sectors)) &
-    (df["Taille entreprise"].isin(sizes)) &
+    (df["Taille entreprise "].isin(sizes)) &
     (df["Maturity Level"].isin(maturity_levels))
 ]
 
