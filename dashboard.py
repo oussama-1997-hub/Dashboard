@@ -15,49 +15,56 @@ df = load_data()
 
 st.title("📊 Lean 4.0 Maturity Assessment Dashboard")
 
-# --- Sidebar Filters ---
-st.sidebar.header("🔎 Filtres de sélection")
+# Sidebar filters compactes en colonnes
+st.sidebar.header("Filtres")
 
-with st.sidebar.expander("Secteur de l'entreprise", expanded=True):
+col1, col2, col3 = st.sidebar.columns(3)
+
+with col1:
     sectors = st.multiselect(
-        "Sélectionnez un ou plusieurs secteurs",
+        "",  # Pas de label visible
         options=df["Quelle est le secteur de votre entreprise ? "].unique(),
         default=df["Quelle est le secteur de votre entreprise ? "].unique(),
-        help="Filtrer par secteur d'activité"
+        help="Secteur"
     )
-
-with st.sidebar.expander("Taille de l'entreprise", expanded=True):
+with col2:
     sizes = st.multiselect(
-        "Sélectionnez une ou plusieurs tailles",
+        "",
         options=df["Taille entreprise "].unique(),
         default=df["Taille entreprise "].unique(),
-        help="Filtrer par taille d'entreprise"
+        help="Taille entreprise"
     )
-
-with st.sidebar.expander("Niveau de maturité", expanded=True):
+with col3:
     maturity_levels = st.multiselect(
-        "Sélectionnez un ou plusieurs niveaux",
+        "",
         options=df["Maturity Level"].unique(),
         default=df["Maturity Level"].unique(),
-        help="Filtrer par niveau de maturité"
+        help="Niveau maturité"
     )
 
-if st.sidebar.button("🔄 Réinitialiser les filtres"):
-    # Pour réinitialiser, on recharge la page (simple workaround)
+# Afficher un petit texte au-dessus des filtres pour indiquer leur fonction
+st.sidebar.markdown(
+    """
+    **Filtres**  
+    *(Secteur - Taille - Maturité)*
+    """
+)
+
+if st.sidebar.button("Réinitialiser"):
     st.experimental_rerun()
 
-# --- Filtered Data ---
+# Filtrer le dataframe
 filtered_df = df[
     (df["Quelle est le secteur de votre entreprise ? "].isin(sectors)) &
     (df["Taille entreprise "].isin(sizes)) &
     (df["Maturity Level"].isin(maturity_levels))
 ]
 
-# --- KPIs ---
+# KPIs
 col1, col2, col3 = st.columns(3)
-col1.metric("📈 Moyenne Lean Score", round(filtered_df["Lean Score"].mean(), 2))
-col2.metric("🖥️ Moyenne Tech Score", round(filtered_df["Tech Score"].mean(), 2))
-col3.metric("🔗 Score Combiné Moyen", round(filtered_df["Combined Score"].mean(), 2))
+col1.metric("Lean Score moyen", round(filtered_df["Lean Score"].mean(), 2))
+col2.metric("Tech Score moyen", round(filtered_df["Tech Score"].mean(), 2))
+col3.metric("Score combiné moyen", round(filtered_df["Combined Score"].mean(), 2))
 
 st.markdown("---")
 
