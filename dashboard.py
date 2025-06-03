@@ -56,9 +56,23 @@ with col6:
     st.plotly_chart(fig, use_container_width=True)
 
 with col7:
-    fig = px.bar(filtered_df["Quelle est le secteur de votre entreprise ? "].value_counts().reset_index(),
-                 x="index", y="Quelle est le secteur de votre entreprise ? ",
-                 title="Répartition par secteur", labels={"index": "Secteur", "Quelle est le secteur de votre entreprise ? ": "Nombre"})
+        # Cleaned sector column name
+    secteur_col = "Quelle est le secteur de votre entreprise ? "
+    
+    # Count values and rename columns for clarity
+    sector_counts = filtered_df[secteur_col].value_counts().reset_index()
+    sector_counts.columns = ["Secteur", "Nombre"]
+    
+    # Bar chart
+    fig = px.bar(
+        sector_counts,
+        x="Secteur",
+        y="Nombre",
+        title="Répartition par secteur",
+        labels={"Secteur": "Secteur", "Nombre": "Nombre d'entreprises"}
+    )
+    st.plotly_chart(fig, use_container_width=True)
+
     st.plotly_chart(fig, use_container_width=True)
 
 # Scatterplot: Tech vs Lean Scores
